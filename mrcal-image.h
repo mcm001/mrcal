@@ -83,7 +83,7 @@ mrcal_image_ ## Tname ## _crop(mrcal_image_ ## Tname ## _t* image,      \
                               int x0, int y0,                           \
                               int w,  int h)                            \
 {                                                                       \
-    return (mrcal_image_ ## Tname ## _t){ .w      = w,                  \
+    return                              { .w      = w,                  \
                                           .h      = h,                  \
                                           .stride = image->stride,      \
                                           .data   = mrcal_image_ ## Tname ## _at(image,x0,y0) }; \
