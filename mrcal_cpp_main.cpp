@@ -31,6 +31,8 @@
 
 #include "mrcal.h"
 
+#include <memory>
+
 class CholmodCtx
 {
 public:
@@ -86,7 +88,7 @@ static mrcal_problem_selections_t construct_problem_selections(
 bool lensmodel_one_validate_args(mrcal_lensmodel_t *mrcal_lensmodel,
                                  std::vector<double> intrinsics,
                                  bool do_check_layout);
-
+#include <memory>
 // Empty vector just to pass in so it's not NULL?
 mrcal_point3_t observations_point[1];
 mrcal_pose_t

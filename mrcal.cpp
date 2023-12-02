@@ -993,7 +993,7 @@ void project_cahvor( // outputs
         dq_dfxy->y = (q->y - cy)/fy; // dqy/dfy
     }
 
-    free(dpdistorted_ddistortion);
+    // free(dpdistorted_ddistortion);
 }
 
 static
@@ -3915,16 +3915,15 @@ void optimizer_callback(// input state
 
     // WARNING: sparsify this. This is potentially a BIG thing on the stack
     // [ctx->Ncameras_intrinsics][ctx->Nintrinsics];
-    // double ** intrinsics_all = (double**) alloca(ctx->Ncameras_intrinsics * sizeof(double*));
-    // for (size_t i = 0; i < ctx->Ncameras_intrinsics; i++) intrinsics_all[i] = (double*)alloca(ctx->Nintrinsics * sizeof(int));
-    std::vector<double*> intrinsics_all_arr(ctx->Ncameras_intrinsics);
-    for (size_t i = 0; i < intrinsics_all_arr.size(); i++) {
-        intrinsics_all_arr[i] = new double[ctx->Nintrinsics];
-    }
-    double** intrinsics_all = intrinsics_all_arr.data();
+    double intrinsics_all[ctx->Ncameras_intrinsics][ctx->Nintrinsics];
+    // std::vector<double*> intrinsics_all_arr(ctx->Ncameras_intrinsics);
+    // for (size_t i = 0; i < intrinsics_all_arr.size(); i++) {
+    //     intrinsics_all_arr[i] = new double[ctx->Nintrinsics];
+    // }
+    // double** intrinsics_all = intrinsics_all_arr.data();
 
     // mrcal_pose_t *camera_rt = (mrcal_pose_t*) alloca(ctx->Ncameras_extrinsics * sizeof(mrcal_pose_t)); //[ctx->Ncameras_extrinsics];
-    std::vector<mrcal_pose_t> camera_rt_arr(ctx->Ncameras_extrinsics); //[ctx->Ncameras_extrinsics];
+    std::vector<mrcal_pose_t> camera_rt_arr(std::max(ctx->Ncameras_extrinsics, 1)); //[ctx->Ncameras_extrinsics];
     mrcal_pose_t *camera_rt = camera_rt_arr.data();
 
     mrcal_calobject_warp_t calobject_warp_local = {};
@@ -4039,31 +4038,17 @@ void optimizer_callback(// input state
         // NOT the unit-scale parameters used by the optimizer
 
 
-        #define array(name, type) \
-            std::vector<type*> name ## _array(ctx->calibration_object_width_n*ctx->calibration_object_height_n); \
-            for (size_t i = 0; i < ctx->calibration_object_width_n*ctx->calibration_object_height_n; i++) name ## _array[i] = new type[2]; \
-            type** name = name ## _array.data();
+        // const size_t bound = ctx->calibration_object_width_n * ctx->calibration_object_height_n;
+        // std::vector<mrcal_point3_t> dq_drcamera_store(bound * 2);
+        // std::vector<mrcal_point3_t*> dq_drcamera_ptr_arr(bound);
+        // auto dq_drcamera = dq_drcamera_ptr_arr.data();
+        // for ( size_t i = 0; i < bound; i++ ) dq_drcamera_ptr_arr[i] = &(dq_drcamera_store[i * 2]);
 
-        size_t bound = ctx->calibration_object_width_n*ctx->calibration_object_height_n;
-        std::vector<mrcal_point3_t*> dq_drcamera_array(bound);
-        for (size_t i = 0; i < bound; i++) {
-            dq_drcamera_array[i] = new mrcal_point3_t[2];
-        }
-        mrcal_point3_t** dq_drcamera = dq_drcamera_array.data();
-
-        // array(dq_drcamera, mrcal_point3_t)
-        array(dq_dtcamera, mrcal_point3_t)
-        array(dq_drframe, mrcal_point3_t)
-        array(dq_dtframe, mrcal_point3_t)
-        array(dq_dcalobject_warp, mrcal_calobject_warp_t)
-
-        #undef array
-
-        // mrcal_point3_t dq_drcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
-        // mrcal_point3_t dq_dtcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
-        // mrcal_point3_t dq_drframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
-        // mrcal_point3_t dq_dtframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
-        // mrcal_calobject_warp_t dq_dcalobject_warp[ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
+        mrcal_point3_t dq_drcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
+        mrcal_point3_t dq_dtcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
+        mrcal_point3_t dq_drframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
+        mrcal_point3_t dq_dtframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
+        mrcal_calobject_warp_t dq_dcalobject_warp[ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         // mrcal_point2_t q_hypothesis      [ctx->calibration_object_width_n*ctx->calibration_object_height_n];
 
         std::vector<mrcal_point2_t> q_hypothesis(ctx->calibration_object_width_n*ctx->calibration_object_height_n);
@@ -4327,6 +4312,14 @@ void optimizer_callback(// input state
             if(gradient_sparse_meta.pool != NULL)
                 splined_intrinsics_grad_irun++;
         }
+
+        
+        // // Cleanup
+        // for (const auto& thing : dq_drcamera_array) delete thing;
+        // for (const auto& thing : dq_dtcamera_array) delete thing;
+        // for (const auto& thing : dq_drframe_array) delete thing;
+        // for (const auto& thing : dq_dtframe_array) delete thing;
+        // for (const auto& thing : dq_dcalobject_warp_array) delete thing;
     }
 
     // Handle all the point observations. This is VERY similar to the
