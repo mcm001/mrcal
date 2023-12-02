@@ -2031,7 +2031,7 @@ typedef struct
 // gradients reference ALL of these points
 static
 void project( // out
-             mrcal_point2_t* restrict q,
+             mrcal_point2_t* q,
 
              // The intrinsics gradients. These are split among several arrays.
              // High-parameter-count lens models can return their gradients
@@ -3915,10 +3915,17 @@ void optimizer_callback(// input state
 
     // WARNING: sparsify this. This is potentially a BIG thing on the stack
     // [ctx->Ncameras_intrinsics][ctx->Nintrinsics];
-    double ** intrinsics_all = (double**) alloca(ctx->Ncameras_intrinsics * sizeof(double*));
-    for (size_t i = 0; i < ctx->Ncameras_intrinsics; i++) intrinsics_all[i] = (double*)alloca(ctx->Nintrinsics * sizeof(int));
+    // double ** intrinsics_all = (double**) alloca(ctx->Ncameras_intrinsics * sizeof(double*));
+    // for (size_t i = 0; i < ctx->Ncameras_intrinsics; i++) intrinsics_all[i] = (double*)alloca(ctx->Nintrinsics * sizeof(int));
+    std::vector<double*> intrinsics_all_arr(ctx->Ncameras_intrinsics);
+    for (size_t i = 0; i < intrinsics_all_arr.size(); i++) {
+        intrinsics_all_arr[i] = new double[ctx->Nintrinsics];
+    }
+    double** intrinsics_all = intrinsics_all_arr.data();
 
-    mrcal_pose_t *camera_rt = (mrcal_pose_t*) alloca(ctx->Ncameras_extrinsics * sizeof(mrcal_pose_t)); //[ctx->Ncameras_extrinsics];
+    // mrcal_pose_t *camera_rt = (mrcal_pose_t*) alloca(ctx->Ncameras_extrinsics * sizeof(mrcal_pose_t)); //[ctx->Ncameras_extrinsics];
+    std::vector<mrcal_pose_t> camera_rt_arr(ctx->Ncameras_extrinsics); //[ctx->Ncameras_extrinsics];
+    mrcal_pose_t *camera_rt = camera_rt_arr.data();
 
     mrcal_calobject_warp_t calobject_warp_local = {};
     const int i_var_calobject_warp =
@@ -4033,10 +4040,18 @@ void optimizer_callback(// input state
 
 
         #define array(name, type) \
-        type ** name = (type**) alloca(ctx->calibration_object_width_n*ctx->calibration_object_height_n * sizeof(type*)); \
-        for (size_t i = 0; i < ctx->calibration_object_width_n*ctx->calibration_object_height_n; i++) name[i] = (type*)alloca(2 * sizeof(type));
+            std::vector<type*> name ## _array(ctx->calibration_object_width_n*ctx->calibration_object_height_n); \
+            for (size_t i = 0; i < ctx->calibration_object_width_n*ctx->calibration_object_height_n; i++) name ## _array[i] = new type[2]; \
+            type** name = name ## _array.data();
 
-        array(dq_drcamera, mrcal_point3_t)
+        size_t bound = ctx->calibration_object_width_n*ctx->calibration_object_height_n;
+        std::vector<mrcal_point3_t*> dq_drcamera_array(bound);
+        for (size_t i = 0; i < bound; i++) {
+            dq_drcamera_array[i] = new mrcal_point3_t[2];
+        }
+        mrcal_point3_t** dq_drcamera = dq_drcamera_array.data();
+
+        // array(dq_drcamera, mrcal_point3_t)
         array(dq_dtcamera, mrcal_point3_t)
         array(dq_drframe, mrcal_point3_t)
         array(dq_dtframe, mrcal_point3_t)
@@ -4051,7 +4066,7 @@ void optimizer_callback(// input state
         // mrcal_calobject_warp_t dq_dcalobject_warp[ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         // mrcal_point2_t q_hypothesis      [ctx->calibration_object_width_n*ctx->calibration_object_height_n];
 
-        mrcal_point2_t *q_hypothesis = (mrcal_point2_t *)alloca(ctx->calibration_object_width_n*ctx->calibration_object_height_n * sizeof(mrcal_point2_t));
+        std::vector<mrcal_point2_t> q_hypothesis(ctx->calibration_object_width_n*ctx->calibration_object_height_n);
 
 
 
@@ -4066,8 +4081,8 @@ void optimizer_callback(// input state
         // this case explicitly here. I store dx/dfx and dy/dfy; no cross terms
         int Ngradients = get_Ngradients(&ctx->lensmodel, ctx->Nintrinsics);
 
-        double * dq_dintrinsics_pool_double = (double*)alloca(ctx->calibration_object_width_n*ctx->calibration_object_height_n*Ngradients * sizeof(double));
-        int * dq_dintrinsics_pool_int = (int*)alloca(ctx->calibration_object_width_n*ctx->calibration_object_height_n * sizeof(int));
+        std::vector<double> dq_dintrinsics_pool_double(ctx->calibration_object_width_n*ctx->calibration_object_height_n*Ngradients);
+        std::vector<int> dq_dintrinsics_pool_int(ctx->calibration_object_width_n*ctx->calibration_object_height_n);
 
         double* dq_dfxy = NULL;
         double* dq_dintrinsics_nocore = NULL;
@@ -4075,12 +4090,13 @@ void optimizer_callback(// input state
 
         int splined_intrinsics_grad_irun = 0;
 
-        project(q_hypothesis,
+        // Seems like things (specifically, the contents of dq_drframe_array) get corrupted when this function is called? Why is that?
+        project(q_hypothesis.data(),
 
                 ctx->problem_selections.do_optimize_intrinsics_core || ctx->problem_selections.do_optimize_intrinsics_distortions ?
-                  dq_dintrinsics_pool_double : NULL,
+                  dq_dintrinsics_pool_double.data() : NULL,
                 ctx->problem_selections.do_optimize_intrinsics_core || ctx->problem_selections.do_optimize_intrinsics_distortions ?
-                  dq_dintrinsics_pool_int : NULL,
+                  dq_dintrinsics_pool_int.data() : NULL,
                 &dq_dfxy, &dq_dintrinsics_nocore, &gradient_sparse_meta,
 
                 ctx->problem_selections.do_optimize_extrinsics ?
@@ -5444,9 +5460,23 @@ mrcal_optimize( // out
         double outliernessScale = -1.0;
         do
         {
+            dogleg_callback_t dlcb = [](
+
+                       const double*   packed_state,
+                       double*         x,
+                       cholmod_sparse* Jt,
+                       void* ctx
+
+            ) { return optimizer_callback(
+                       packed_state,
+                       x,
+                       Jt,
+                        (const callback_context_t*)ctx
+            ); };
+
             norm2_error = dogleg_optimize2(packed_state,
                                            Nstate, ctx.Nmeasurements, ctx.N_j_nonzero,
-                                           (dogleg_callback_t*)&optimizer_callback, &ctx,
+                                           &dlcb, &ctx,
                                            &dogleg_parameters,
                                            &solver_context);
 
