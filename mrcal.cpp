@@ -4049,7 +4049,7 @@ void optimizer_callback(// input state
         TwoDArray<mrcal_point3_t> dq_drcamera_backing(ctx->calibration_object_width_n*ctx->calibration_object_height_n, 2);
         mrcal_point3_t** dq_drcamera = dq_drcamera_backing.data();
 
-        // mrcal_point3_t dq_drcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
+        mrcal_point3_t dq_drcamera_test       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         mrcal_point3_t dq_dtcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         mrcal_point3_t dq_drframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         mrcal_point3_t dq_dtframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
@@ -4058,6 +4058,14 @@ void optimizer_callback(// input state
 
         std::vector<mrcal_point2_t> q_hypothesis(ctx->calibration_object_width_n*ctx->calibration_object_height_n);
 
+        for (int i = 0; i < ctx->calibration_object_width_n*ctx->calibration_object_height_n; i++) {
+            for (int j = 0; j < 2; j++)
+                printf("[%i][%i] offset 1: %lu - offset 2: %lu - delta %lu\n", i, j, 
+                    (char*)&dq_drcamera[i][j] - (char*)&dq_drcamera[0][0],
+                    (char*)&dq_drcamera_test[i][j] - (char*)&dq_drcamera_test[0][0],
+                   ((char*)&dq_drcamera[i][j] - (char*)&dq_drcamera[0][0]) - ((char*)&dq_drcamera_test[i][j] - (char*)&dq_drcamera_test[0][0])
+            );
+        }
 
 
         // I get the intrinsics gradients in separate arrays, possibly sparsely.
