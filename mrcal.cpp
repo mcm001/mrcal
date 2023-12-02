@@ -32,6 +32,21 @@
 // Defines
 #define restrict __restrict 
 
+template<typename T>
+struct TwoDArray {
+    std::vector<T> store;
+    std::vector<T*> ptr_array;
+    
+    TwoDArray(int dim1, int dim2) {
+        store.resize(dim1 * dim2);
+        ptr_array.resize(dim1);
+        for ( size_t i = 0; i < dim1; i++ ) ptr_array[i] = &(store[i * dim2]);
+    }
+
+    inline T** data() { return  ptr_array.data(); }
+};
+
+
 // These are parameter variable scales. They have the units of the parameters
 // themselves, so the optimizer sees x/SCALE_X for each parameter. I.e. as far
 // as the optimizer is concerned, the scale of each variable is 1. This doesn't
@@ -3914,15 +3929,9 @@ void optimizer_callback(// input state
     // cameras. With many cameras (this will be slow)
 
     // WARNING: sparsify this. This is potentially a BIG thing on the stack
-    // [ctx->Ncameras_intrinsics][ctx->Nintrinsics];
-    double intrinsics_all[ctx->Ncameras_intrinsics][ctx->Nintrinsics];
-    // std::vector<double*> intrinsics_all_arr(ctx->Ncameras_intrinsics);
-    // for (size_t i = 0; i < intrinsics_all_arr.size(); i++) {
-    //     intrinsics_all_arr[i] = new double[ctx->Nintrinsics];
-    // }
-    // double** intrinsics_all = intrinsics_all_arr.data();
+    TwoDArray<double> i_all_backing_arr(ctx->Ncameras_intrinsics, ctx->Nintrinsics);
+    double** intrinsics_all = i_all_backing_arr.data();
 
-    // mrcal_pose_t *camera_rt = (mrcal_pose_t*) alloca(ctx->Ncameras_extrinsics * sizeof(mrcal_pose_t)); //[ctx->Ncameras_extrinsics];
     std::vector<mrcal_pose_t> camera_rt_arr(std::max(ctx->Ncameras_extrinsics, 1)); //[ctx->Ncameras_extrinsics];
     mrcal_pose_t *camera_rt = camera_rt_arr.data();
 
@@ -4037,14 +4046,10 @@ void optimizer_callback(// input state
         // these are computed in respect to the real-unit parameters,
         // NOT the unit-scale parameters used by the optimizer
 
+        TwoDArray<mrcal_point3_t> dq_drcamera_backing(ctx->calibration_object_width_n*ctx->calibration_object_height_n, 2);
+        mrcal_point3_t** dq_drcamera = dq_drcamera_backing.data();
 
-        // const size_t bound = ctx->calibration_object_width_n * ctx->calibration_object_height_n;
-        // std::vector<mrcal_point3_t> dq_drcamera_store(bound * 2);
-        // std::vector<mrcal_point3_t*> dq_drcamera_ptr_arr(bound);
-        // auto dq_drcamera = dq_drcamera_ptr_arr.data();
-        // for ( size_t i = 0; i < bound; i++ ) dq_drcamera_ptr_arr[i] = &(dq_drcamera_store[i * 2]);
-
-        mrcal_point3_t dq_drcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
+        // mrcal_point3_t dq_drcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         mrcal_point3_t dq_dtcamera       [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         mrcal_point3_t dq_drframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
         mrcal_point3_t dq_dtframe        [ctx->calibration_object_width_n*ctx->calibration_object_height_n][2];
