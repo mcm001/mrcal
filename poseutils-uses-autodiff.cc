@@ -9,9 +9,7 @@
 #include "autodiff.hh"
 #include "strides.h"
 
-extern "C" {
 #include "poseutils.h"
-}
 
 template<int N>
 static void
@@ -123,7 +121,6 @@ r_from_R_core(// output
     }
 }
 
-extern "C"
 void mrcal_rotate_point_r_full( // output
                                double* x_out,      // (3,) array
                                int x_out_stride0,  // in bytes. <= 0 means "contiguous"
@@ -198,7 +195,6 @@ void mrcal_rotate_point_r_full( // output
     }
 }
 
-extern "C"
 void mrcal_transform_point_rt_full( // output
                                    double* x_out,      // (3,) array
                                    int x_out_stride0,  // in bytes. <= 0 means "contiguous"
@@ -319,7 +315,6 @@ void mrcal_transform_point_rt_full( // output
 }
 
 
-extern "C"
 void mrcal_r_from_R_full( // output
                          double* r,       // (3,) vector
                          int r_stride0,   // in bytes. <= 0 means "contiguous"
@@ -685,7 +680,6 @@ compose_r_core(// output
             sinC_over_C_recip;
 }
 
-extern "C"
 void mrcal_compose_r_full( // output
                            double* r_out,       // (3,) array
                            int r_out_stride0,   // in bytes. <= 0 means "contiguous"

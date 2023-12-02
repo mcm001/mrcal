@@ -16,15 +16,18 @@
 #include <math.h>
 #include <string.h>
 #include "strides.h"
+#include <vector>
 
 template<int NGRAD, int NVEC> struct vec_withgrad_t;
+
+#define MAX(a, b) (a > b ? a : b)
 
 
 template<int NGRAD>
 struct val_withgrad_t
 {
     double x;
-    double j[NGRAD];
+    double j[MAX(NGRAD, 1)];
 
     val_withgrad_t(double _x = 0.0) : x(_x)
     {

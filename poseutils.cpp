@@ -13,6 +13,9 @@
 #include "poseutils.h"
 #include "strides.h"
 
+// Defines
+#define restrict __restrict 
+
 // All arrays stored in row-major order
 //
 // I have two different representations of pose transformations:

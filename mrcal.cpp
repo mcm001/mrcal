@@ -5211,8 +5211,8 @@ bool mrcal_optimizer_callback(// out
 
     result = true;
 
-// done:
-//     return result;
+done:
+    return result;
 }
 
 mrcal_stats_t

@@ -37,7 +37,6 @@
 //
 //   x_rotated = R * x
 
-
 // Store an identity rotation matrix into the given (3,3) array
 //
 // This is simply an identity matrix
