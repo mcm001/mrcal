@@ -33,3 +33,13 @@ test/test-parser-cameramodel
 *.fig.bak
 ltximg/
 doc/out
+
+
+all the dlls/*
+build/*
+out/*
+.vs/*
+*.dll
+*.exp
+*.lib
+*.exe

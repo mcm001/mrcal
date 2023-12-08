@@ -17,6 +17,12 @@
 #include "triangulation.h"
 #include "mrcal-image.h"
 
+#ifdef __GNUC__
+#define MRCAL_DLLEXPORT __attribute__((dllexport))
+#else
+#define MRCAL_DLLEXPORT __declspec(dllexport)
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////// Lens models
 ////////////////////////////////////////////////////////////////////////////////
@@ -734,6 +740,7 @@ int mrcal_state_index_calobject_warp(int Ncameras_intrinsics, int Ncameras_extri
                                      int Npoints, int Npoints_fixed, int Nobservations_board,
                                      mrcal_problem_selections_t problem_selections,
                                      const mrcal_lensmodel_t* lensmodel);
+MRCAL_DLLEXPORT
 int mrcal_num_states_calobject_warp(mrcal_problem_selections_t problem_selections,
                                     int Nobservations_board);
 

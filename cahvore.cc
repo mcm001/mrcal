@@ -15,6 +15,10 @@ extern "C" {
 #include "cahvore.h"
 }
 
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
 template <int N>
 static
 bool _project_cahvore_internals( // outputs

@@ -21,6 +21,10 @@
 #include "cahvore.h"
 #include "util.h"
 
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
 // These are parameter variable scales. They have the units of the parameters
 // themselves, so the optimizer sees x/SCALE_X for each parameter. I.e. as far
 // as the optimizer is concerned, the scale of each variable is 1. This doesn't
